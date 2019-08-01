@@ -21,7 +21,9 @@ import matplotlib.patches as mpatches
 
 # CODE PARAMETERS:
 
-subjects = ['D347','D348','D346','H181','H183','H185','H187','H188','H189','H190']
+subjects = ['D348']#,'D347','D346','H181','H183','H185','H187','H188','H189','H190']
+listDirs = True # Make true if you run into errors and you want directories/IDs to be printed out
+fullHistory = False
 makePlot = True
 savePlot = False
 saveData = False
@@ -31,19 +33,19 @@ dataDir = r'C:\Users\Julia\Dropbox\Share\DMS training'
 os.chdir(dataDir)
 folders = [d for d in os.listdir(os.getcwd()) if os.path.isdir(d)] # get only folders
 
-# start_day = '2019.06.17'
-# start_day = '2019.01.28' # beginning of year start date
-start_day = '2019.07.22'
+start_day = '2019.01.28' # beginning of year start date
+# start_day = '2019.07.22'
 start_day_ind = [i for i, s in enumerate(folders) if start_day in s][0]
 folders = folders[start_day_ind:]
 num_folders = len(folders)
 
 col_to_use = list(range(0,25)) # for python txt files
 
-def get_session_type(ttype,session_type):
+def get_session_type(ttype,session_type,fullHistory):
 
     # trial types are:
     # 0->9 = AA->FA respectively
+
     ttype = pd.to_numeric(ttype)
     types = np.unique(ttype)
     types = pd.to_numeric(types)
@@ -59,79 +61,64 @@ def get_session_type(ttype,session_type):
         BB = np.argwhere(ttype == types[2])
     if 3 in types:
         BA = np.argwhere(ttype == types[3])
+
     # Not sure how to track ITS, if making figures for current week, it doesn't know when the start day is. It could
     # be coded to look at previous day to see if there's data, then if there is ignore ITS, but that's a lotta work...
 
-    # if session_type == 'start' or session_type == 'ITS':
-    #     if 2 and 3 in types:
-    #         session_type = 'ITS'
-    #     else:
-    #         session_type = '2types'
-    #     if 4 and 5 in types:
-    #         session_type = '2types'
-    #
-    # if session_type == '2types':
-    #     if 2 and 3 in types:
-    #         session_type = 'ABAB'
-    #     elif 6 and 7 in types:
-    #         session_type = 'CDAB'
 
-    # if session_type == 'start':
-    if 0 in types and 1 in types and 2 not in types:
-        session_type = '2T'
-    elif 4 in types and 5 in types and 6 not in types:
-        session_type = '2T'
-    elif 8 in types and 9 in types and 10 not in types:
-        session_type = '2T'
-    elif 3 in types and 4 not in types and 8 not in types:
-        session_type = 'ABAB'
-    elif 3 not in types and 4 in types and 8 not in types:
-        session_type = 'CDAB'
-    elif 3 not in types and 4 not in types and 8 in types:
-        session_type = 'EFAB'
-    elif 3 in types and 4 in types and 8 not in types:
-        session_type = '8T'
-    elif 3 in types and 4 not in types and 8 in types:
-        session_type = '8T'
-    elif 3 not in types and 4 in types and 8 in types:
-        session_type = '8T'
-    elif 3 in types and 4 in types and 8 in types:
-        session_type = '12T'
+    # With this method, there is no way to return to ITS. This happens sometimes, but is infrequent.
+    if fullHistory:
+        if session_type == 'ITS':
+            if 0 in types and 1 in types and 2 not in types:
+                session_type = '2T'
+            elif 4 in types and 5 in types and 6 not in types:
+                session_type = '2T'
+            elif 8 in types and 9 in types and 10 not in types:
+                session_type = '2T'
+        else:
+            if 3 in types and 4 not in types and 8 not in types:
+                session_type = 'ABAB'
+            elif 3 not in types and 4 in types and 8 not in types:
+                session_type = 'CDAB'
+            elif 3 not in types and 4 not in types and 8 in types:
+                session_type = 'EFAB'
+            elif 3 in types and 4 in types and 8 not in types:
+                session_type = '8T'
+            elif 3 in types and 4 not in types and 8 in types:
+                session_type = '8T'
+            elif 3 not in types and 4 in types and 8 in types:
+                session_type = '8T'
+            elif 3 in types and 4 in types and 8 in types:
+                session_type = '12T'
+    else:
+        if 0 in types and 1 in types and 2 not in types:
+            session_type = '2T'
+        elif 4 in types and 5 in types and 6 not in types:
+            session_type = '2T'
+        elif 8 in types and 9 in types and 10 not in types:
+            session_type = '2T'
+        elif 3 in types and 4 not in types and 8 not in types:
+            session_type = 'ABAB'
+        elif 3 not in types and 4 in types and 8 not in types:
+            session_type = 'CDAB'
+        elif 3 not in types and 4 not in types and 8 in types:
+            session_type = 'EFAB'
+        elif 3 in types and 4 in types and 8 not in types:
+            session_type = '8T'
+        elif 3 in types and 4 not in types and 8 in types:
+            session_type = '8T'
+        elif 3 not in types and 4 in types and 8 in types:
+            session_type = '8T'
+        elif 3 in types and 4 in types and 8 in types:
+            session_type = '12T'
 
     # Possible problems with method:
     # When running EFAB, sometimes user forgets to change trial structure until after hitting run, which means
-    # a few ABCD trial types are ran when they aren't supposed to
+    # a few ABCD trial types are ran when they aren't supposed to.
+    # This fixes most cases, but isn't future proof.
     if session_type == 'ABAB' or session_type == 'CDAB' or session_type == '8T':
         if len(AA)+len(AB)+len(BB)+len(BA) < 8:
             session_type = 'EFAB'
-
-
-
-    # if session_type == 'ABAB' or session_type == 'CDAB' or session_type == 'EFAB':
-    #     if 3 in types and 4 in types and 8 not in types:
-    #         session_type = '8T'
-    #     elif 3 in types and 4 not in types and 8 in types:
-    #         session_type = '8T'
-    #     elif 3 not in types and 4 in types and 8 in types:
-    #         session_type = '8T'
-    #     elif 3 in types and 4 in types and 8 in types:
-    #         session_type = '12T'
-    #
-    # if session_type == '8T' or session_type == '12T':
-    #     if 3 in types and 4 not in types and 8 not in types:
-    #         session_type = 'ABAB'
-    #     elif 3 not in types and 4 in types and 8 not in types:
-    #         session_type = 'CDAB'
-    #     elif 3 not in types and 4 not in types and 8 in types:
-    #         session_type = 'EFAB'
-    #     elif 3 in types and 4 in types and 8 not in types:
-    #         session_type = '8T'
-    #     elif 3 in types and 4 not in types and 8 in types:
-    #         session_type = '8T'
-    #     elif 3 not in types and 4 in types and 8 in types:
-    #         session_type = '8T'
-    #     elif 3 in types and 4 in types and 8 in types:
-    #         session_type = '12T'
 
     # For random designation - mostly works, but not perfect. This is a stupid way to do it..
     # if session_type == 'FA' or session_type == '2types_to_FA' or session_type == 'FR':
@@ -159,6 +146,37 @@ def get_session_type(ttype,session_type):
 
     return session_type
 
+def sessions_to_skip(curID,curDate):
+    # SPECIAL CASES FOR LOOP TO SKIP:
+    shouldSkip = False
+
+    # No header appears in some python files...very strange. No idea how that happened
+    if curID == 'D338' and curDate == '2019.04.03':
+        print('No header. Skipped ' + curID + ', ' + curDate)
+        shouldSkip = True
+    elif curID == 'D338' and curDate == '2019.05.17':
+        print('No header. Skipped ' + curID + ', ' + curDate)
+        shouldSkip = True
+    elif curID == 'D348' and curDate == '2019.05.17':
+        print('No header. Skipped ' + curID + ', ' + curDate)
+        shouldSkip = True
+
+    return shouldSkip
+
+def remove_last_misses(curData):
+    # iterate: if last 2 trials are no choice -> remove
+    if session_type != 'ITS':
+        miss = pd.to_numeric(curData.miss)
+        done = False
+        while not done:
+            t = len(curData) - 1
+            if miss[t] == 1 and miss[t - 1] == 1:
+                curData = curData.iloc[0:t - 1, :]
+            else:
+                done = True
+    return curData
+
+# If program is restarted, then it creates a new header in middle of file making txt bad
 def is_txt_good(curData,useEvent):
     "restarting training program adds a new date and time into txt file. Check if anything isn't roundable."
     txt_good = True
@@ -229,6 +247,7 @@ def fix_bad_txt(curData,useEvent):
                     good_ind = np.array([int(start_ind[i]), last_ind])
     return good_ind
 
+# Need at least 50 trials - arbitrary number. Change if necessary
 def is_txt_size_good(curData):
     txt_size_good = True
     if len(curData) <= 50:
@@ -260,22 +279,28 @@ def overallPlot(subjects, df, savePlot, saveDir):
         curMax = df['Max'][df.ID == curSubj].reset_index(drop=True)
         curMin = df['Min'][df.ID == curSubj].reset_index(drop=True)
 
-        # make sure all values are floats in case some str trickery happened...
+        # change data types from series to list of floats or str
         curPerfsu = []
         curELu = []
         curMaxu = []
         curMinu = []
+        curDatesu = []
         for c in range(len(curPerfs)):
-            t = float(curPerfs[c])
-            curPerfsu.append(t)
-            t = float(curEl[c])
-            curELu.append(t)
-            t = float(curMax[c])
-            curMaxu.append(t)
-            t = float(curMin[c])
-            curMinu.append(t)
+            curPerfsu.append(float(curPerfs[c]))
+            curELu.append(float(curEl[c]))
+            curMaxu.append(float(curMax[c]))
+            curMinu.append(float(curMin[c]))
+            curDatesu.append(str(curDates[c]))
 
-        x = np.array(range(1, len(curPerfs) + 1))
+        # modify curDates to remove year making the date smaller so it'll fit in the xtick labels
+        tickLabels=[]
+        for c in range(len(curDatesu)):
+            if c == 0:
+                tickLabels.append(curDatesu[c][5:])
+            else:
+                tickLabels.append(curDatesu[c][8:])
+
+        x = np.array(range(1, len(curPerfsu) + 1))
 
         plt.subplot(numRows, numCols, i + 1)
 
@@ -325,19 +350,24 @@ def overallPlot(subjects, df, savePlot, saveDir):
                 plt.xlabel('Day')
         plt.title(curSubj)
         plt.ylim(.05, 1.05)
+        plt.xticks(x,tickLabels)
 
     # Plot items outside of loop:
 
     # Legend:
-    leg_ITI = mpatches.Patch(color=colors[0], label='ITI')
-    leg_2T = mpatches.Patch(color=colors[1], label='2T')
     leg_ABAB = mpatches.Patch(color=colors[2], label='ABAB')
     leg_CDAB = mpatches.Patch(color=colors[3], label='CDAB')
     leg_EFAB = mpatches.Patch(color=colors[4], label='EFAB')
     leg_8T = mpatches.Patch(color=colors[5], label='8T')
     leg_12T = mpatches.Patch(color=colors[6], label='12T')
     leg_EL = mpatches.Patch(color=colors[7], label='Early Lick')
-    fig.legend(handles=[leg_ITI, leg_2T, leg_ABAB, leg_CDAB, leg_EFAB, leg_8T, leg_12T, leg_EL], loc='center right')
+    if fullHistory:
+        leg_ITS = mpatches.Patch(color=colors[0], label='ITS')
+        leg_2T = mpatches.Patch(color=colors[1], label='2T')
+        fig.legend(handles=[leg_ITS, leg_2T, leg_ABAB, leg_CDAB, leg_EFAB, leg_8T, leg_12T, leg_EL], loc='center right')
+    else:
+        leg_2T = mpatches.Patch(color=colors[1], label='ITS/2T')
+        fig.legend(handles=[leg_2T, leg_ABAB, leg_CDAB, leg_EFAB, leg_8T, leg_12T, leg_EL], loc='center right')
 
     # Title
     figureTitle = 'Performances for ' + str(curDates[0]) + ' through ' + str(curDates.iloc[-1])
@@ -373,18 +403,11 @@ for id_index in range(len(subjects)):
         curDir = dataDir + '\\' + curDate
         os.chdir(curDir)
         files = os.listdir()
-        print(curDir)
+        if listDirs:
+            print(curDir)
 
-        # SPECIAL CASES FOR LOOP TO SKIP:
-        # No header appears in some python files...very strange. No idea how that happened
-        if curID=='D338' and curDate=='2019.04.03':
-            print('No header. Skipped '+curID+', '+curDate)
-            continue
-        elif curID=='D338' and curDate=='2019.05.17':
-            print('No header. Skipped ' + curID + ', ' + curDate)
-            continue
-        elif curID=='D348' and curDate=='2019.05.17':
-            print('No header. Skipped ' + curID + ', ' + curDate)
+        shouldSkip = sessions_to_skip(curID,curDate)
+        if shouldSkip:
             continue
 
         # determine if using _events(py) or _training(lv) file
@@ -426,22 +449,15 @@ for id_index in range(len(subjects)):
                 try:
                     curData = pd.read_csv(curFid, sep='\t', header=1, skipfooter=1)
                 except pd.errors.ParserError as error:
-                    print(error)
-                    print('switched from python to lv, screwing up delimiters. Skipped '+curID+', '+curDate)
+                    print('Error: switched from python to lv, screwing up delimiters. Skipped '+curID+', '+curDate)
                     continue
                 try: # files named _training have python delimiters
                     curData.trial_type
                 except AttributeError as error:
                     curData = pd.read_csv(curFid, index_col=False, usecols=col_to_use)
-            print(curFid)
 
-            # Check if labview program started before python which creates an error
-            try:
-                pd.to_numeric(curData['trial_no.'])
-            except ValueError as error:
-                print(error)
-                print('switched from lv to python, screwing up delimiters. Skipped '+curID+', '+curDate)
-                continue
+            if listDirs:
+                print(curFid)
 
             # CHECK IF FILE WAS RESTARTED WITHIN SESSION (screws up index)
             txt_good = is_txt_good(curData,useEvent)
@@ -453,7 +469,14 @@ for id_index in range(len(subjects)):
             # CHECK IF FILE IS LARGE ENOUGH
             txt_size_good = is_txt_size_good(curData)
             if not txt_size_good:
-                print('txt file is less than 50 trials. Skipped '+curID+', '+curDate)
+                print('Error: txt file is less than 50 trials. Skipped '+curID+', '+curDate)
+                continue
+
+                # Check if labview program started before python which creates an error
+            try:
+                pd.to_numeric(curData['trial_no.'])
+            except ValueError as error:
+                print('Error: switched from lv to python, screwing up delimiters. Skipped ' + curID + ', ' + curDate)
                 continue
 
             # if curData was sliced at all, indices get messed up. Reset indices to 0
@@ -461,21 +484,10 @@ for id_index in range(len(subjects)):
             ttype = np.array(curData.trial_type)
 
             # get session type
-            session_type = get_session_type(ttype, session_type)
+            session_type = get_session_type(ttype, session_type, fullHistory)
 
-
-
-
-            # iterate: if last 2 trials are no choice -> remove
-            if session_type != 'ITS':
-                miss = pd.to_numeric(curData.miss)
-                done = False
-                while not done:
-                    t = len(curData) - 1
-                    if miss[t] == 1 and miss[t - 1] == 1:
-                        curData = curData.iloc[0:t - 1, :]
-                    else:
-                        done = True
+            # remove last miss trials from session to make data cleaner
+            curData = remove_last_misses(curData)
 
             # no more alterations of curData after this point
 
@@ -526,6 +538,7 @@ for id_index in range(len(subjects)):
         cur_d = temp_d
     else:
         cur_d = np.hstack((cur_d,temp_d))
+    print('Finished '+curID)
 
 d = {'ID': cur_d[0], 'Dates': cur_d[1], 'SessionType': cur_d[2], 'Performances': cur_d[3], 'Max': cur_d[4],
      'Min': cur_d[5], 'EarlyLicks': cur_d[6]}
@@ -536,9 +549,11 @@ if saveData:
     os.chdir(saveDir)
     fid = 'training_data_'+start_day+'_-_'+curDate
     df.to_csv(fid, index=False)
-    print('dataframe saved as '+fid)
+    print('Dataframe saved as '+fid)
 else:
-    print('dataframe not saved')
+    print('Dataframe not saved')
+
+print('If all the plot dots are ITS, set fullHistory = False in code parameters!')
 
 if makePlot:
     fig = overallPlot(subjects,df,savePlot,saveDir)
